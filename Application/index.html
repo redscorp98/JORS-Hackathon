@@ -7,12 +7,40 @@
       type="text/javascript"
       src="node_modules/jquery/dist/jquery.js"
     ></script>
+    <script>
+      var $ = (jQuery = require("jquery"));
+    </script>
     <link rel="stylesheet" href="styles/stylesheet.css" />
     <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
     <meta
       http-equiv="Content-Security-Policy"
       content="script-src 'self' 'unsafe-inline';"
     />
+    <script>
+      const serialport = require("serialport");
+      var port;
+      var queue = [];
+      serialport.list().then(function(data) {
+        console.log(data[0].path);
+        port = new serialport(data[0].path, {
+          baudRate: 9600
+        });
+      });
+      writeSerial = async function() {
+        port.write("A", function(err) {
+          if (err) {
+            return console.log("Error on write: ", err.message);
+          }
+          console.log("message written");
+        });
+      };
+      // calling this function leads to serial reads being pushed into variable queue continuously
+      readSerial = function() {
+        port.on("readable", function() {
+          queue.push(port.read());
+        });
+      };
+    </script>
   </head>
   <body>
     <h1>Hello World!</h1>
