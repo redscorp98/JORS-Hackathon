@@ -48,13 +48,15 @@ void loop() {
     millisTrigEnd = millis();
     waitingForEchoPulse = true;
   }
-  
-  //Serial.print("Distance ");
-  //Serial.print(distance_cm);
-  //Serial.print(" X ");
-  //Serial.print(xJoyVal);
-  //Serial.print(" Y ");
-  //Serial.println(yJoyVal);
+
+  /*
+  Serial.print("Distance ");
+  Serial.print(distance_cm);
+  Serial.print(" X ");
+  Serial.print(xJoyVal);
+  Serial.print(" Y ");
+  Serial.println(yJoyVal);
+  */
   
   if (Serial.available())
   {
