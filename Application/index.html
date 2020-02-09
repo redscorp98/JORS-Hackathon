@@ -42,6 +42,8 @@
           readSerial();
         });
 
+        $("#leaderboard").hide();
+
         // calling this function leads to serial reads being pushed into variable queue continuously
       });
     </script>
@@ -67,17 +69,42 @@
         var params = { width: 1000, height: 1000 };
         var two = new Two(params).appendTo(elem);
         var styles = {
-          family: "proxima-nova, sans-serif",
+          family: "aphontregular, proxima-nova, sans-serif",
           size: 80,
           leading: 50,
           weight: 900
         };
         getElapsedTime = function() {
           return String(
-            ((new Date().getTime() - startTime) % (1000 * 60)) / 1000
+            (((new Date().getTime() - startTime) % (1000 * 60)) / 1000).toFixed(
+              2
+            )
           );
         };
-
+        getTopScores = function() {
+          $.ajax({
+            url: "https://samken600.me/leaderboard?limit=5",
+            method: "GET",
+            success: function(data, textStatus, xhr) {
+              console.log(data);
+              $("#leaderboardBody").empty();
+              for (index in data) {
+                console.log(data[index]);
+                $("#leaderboardBody").append(
+                  "<div class='scoreRow' id=" +
+                    index +
+                    "><h3>" +
+                    data[index].username +
+                    "</h3>" +
+                    "<h3>" +
+                    data[index].score.toFixed(2) +
+                    "</h3></div>"
+                );
+                // $("#leaderboard").append(item.username);
+              }
+            }
+          });
+        };
         currentTime = timer = two.makeText(
           "Timer",
           params.width / 2,
@@ -99,7 +126,7 @@
         center.noStroke();
         // The object returned has many stylable properties:
 
-        rect = two.makeRectangle(200, 800, 50, 50);
+        rect = two.makeRectangle(180, 800, 50, 50);
         rect.fill = "rgb(27, 134, 153)";
         rect.opacity = 1;
         rect.noStroke();
@@ -107,77 +134,131 @@
           var code = e.which;
           console.log(code);
           switch (code) {
-            case 119:
             case 112 /*p*/:
               start = 1 - start;
               startTime = new Date().getTime();
               break;
-            case 97:
-              /*a*/ direction = "left";
-              break;
-            case 100:
-              /*d*/ direction = "right";
-              break;
+            case 114:
+              /*r*/ start = 0;
+              rect.translation.x = 180;
+              rect.translation.y = 800;
+              rect.rotation = 0;
+              timer.value = 0;
+              $("#draw-shapes").show();
+              $("#leaderboard").hide();
           }
         });
 
         two
           .bind("update", function(frameCount) {
-            if (frameCount % 10 == 0) {
-              writeSerial();
-            }
-            if (queue.length > 0) {
-              var buffer = queue.shift();
-              // console.log(buffer);
-              // range 0- 1023
-              joystick = (buffer[5] << 8) | buffer[4];
-              joystickMod = (512.0 - joystick) / 1023.0;
-
-              // console.log("Queue: " + String(joystick));
-              // range 5 - 15
-              ultraSound =
-                (buffer[3] << 24) |
-                (buffer[2] << 16) |
-                (buffer[1] << 8) |
-                buffer[0];
-              ultraSoundClamped = Math.min(25, Math.max(15, ultraSound + 10));
-              speed = ultraSoundClamped / 5;
-            }
-
-            if (frameCount % 2 == 0) {
-              // console.log("In frame: " + String(joystick));
-              angle = Math.PI * (10.0 / 180.0) * joystickMod;
-              if (joystick < 440 || joystick >= 584) {
-                rect.rotation += angle;
-                direction = null;
-              }
-            }
-
             // controls regular movements
             if (start == 1) {
+              if (frameCount % 10 == 0) {
+                writeSerial();
+              }
+              if (queue.length > 0) {
+                var buffer = queue.shift();
+                // range 0- 1023
+                joystick = (buffer[5] << 8) | buffer[4];
+                joystickMod = (512.0 - joystick) / 1023.0;
+                // range 5 - 15
+                ultraSound =
+                  (buffer[3] << 24) |
+                  (buffer[2] << 16) |
+                  (buffer[1] << 8) |
+                  buffer[0];
+                ultraSoundClamped = Math.min(25, Math.max(15, ultraSound + 10));
+                speed = ultraSoundClamped / 5;
+              }
+              if (frameCount % 2 == 0) {
+                // console.log("In frame: " + String(joystick));
+                angle = Math.PI * (10.0 / 180.0) * joystickMod;
+                if (joystick < 440 || joystick >= 584) {
+                  rect.rotation += angle;
+                  direction = null;
+                }
+              }
               rect.translation.x += speed * Math.sin(rect.rotation);
               rect.translation.y -= Math.cos(rect.rotation) * speed;
               if (frameCount % 5 == 0) {
                 timer.value = String(parseFloat(getElapsedTime()).toFixed(1));
               }
-            }
-            rectTop = rect.translation.y - rect.height / 2;
-            rectBottom = rect.translation.y + rect.height / 2;
-            rectRight = rect.translation.x + rect.width / 2;
-            rectLeft = rect.translation.x - rect.width / 2;
-            // logic to make sure the car is in bounds
-            if (
-              (rectBottom > center.getBoundingClientRect().top &&
-                rectRight > center.getBoundingClientRect().left &&
-                rectLeft < center.getBoundingClientRect().right &&
-                rectTop < center.getBoundingClientRect().bottom) ||
-              rectTop < big.getBoundingClientRect().top ||
-              rectLeft < big.getBoundingClientRect().left ||
-              rectRight > big.getBoundingClientRect().right ||
-              rectBottom > big.getBoundingClientRect().bottom
-            ) {
-              console.log("Collision");
-              start = 0;
+              rectTop = rect.translation.y - rect.height / 2;
+              rectBottom = rect.translation.y + rect.height / 2;
+              rectRight = rect.translation.x + rect.width / 2;
+              rectLeft = rect.translation.x - rect.width / 2;
+              // logic to make sure the car is in bounds
+              if (
+                (rectBottom > center.getBoundingClientRect().top &&
+                  rectRight > center.getBoundingClientRect().left &&
+                  rectLeft < center.getBoundingClientRect().right &&
+                  rectTop < center.getBoundingClientRect().bottom) ||
+                rectTop < big.getBoundingClientRect().top ||
+                rectLeft < big.getBoundingClientRect().left ||
+                rectRight > big.getBoundingClientRect().right ||
+                rectBottom > big.getBoundingClientRect().bottom
+              ) {
+                console.log("Collision and End");
+                var endTime = getElapsedTime();
+                console.log("You lasted " + endTime + " time");
+                $.ajaxSetup({ contentType: "application/json; charset=utf-8" });
+                var user = "sam sux";
+                var pwd = "sam double sux";
+                var items = {
+                  username: user,
+                  score: endTime,
+                  password: pwd
+                };
+
+                var stuff = JSON.stringify(items);
+
+                $.post("https://samken600.me/leaderboard", stuff, function(
+                  result
+                ) {
+                  console.log("Here");
+                  console.log(result);
+                });
+                $.ajax({
+                  url: "https://samken600.me/leaderboard",
+                  data: stuff,
+                  method: "POST",
+                  error: function(xhr, status, error) {
+                    //does patch if user already exists
+                    if (error == "CONFLICT") {
+                      var newStuff = {
+                        query: {
+                          username: user,
+                          password: pwd
+                        },
+                        payload: {
+                          score: endTime
+                        }
+                      };
+                      var newStuff1 = JSON.stringify(newStuff);
+                      $.ajax({
+                        url: "https://samken600.me/leaderboard",
+                        data: newStuff1,
+                        method: "PATCH",
+                        success: function(data, textStatus, xhr) {
+                          console.log(data);
+                        }
+                      });
+                    }
+                  },
+                  success: function(data, textStatus, xhr) {
+                    console.log(xhr.status);
+                  },
+                  complete: function(xhr, textStatus) {
+                    console.log(xhr.status);
+                  }
+                });
+                $("#draw-shapes").hide();
+                getTopScores();
+                $("#leaderboard").show();
+
+                start = 0;
+              }
+            } else {
             }
           })
           .play();
@@ -188,5 +269,13 @@
   </head>
   <body>
     <div id="draw-shapes"></div>
+    <div id="leaderboard">
+      <h1>Leaderboard</h1>
+      <div class="scoreRow" id="titleRow">
+        <h3>Name</h3>
+        <h3>Score</h3>
+      </div>
+      <div id="leaderboardBody"></div>
+    </div>
   </body>
 </html>

@@ -10,10 +10,63 @@ button {
 #draw-shapes {
   border: solid black 1px;
   background-color: black;
-  height: 1400px;
-  width: 1400px;
+  height: 1000px;
+  width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
 }
 body {
   height: auto;
   width: auto;
+  background-color: black;
+}
+.scoreRow {
+  border: none;
+  border-radius: 4px;
+  width: 600px;
+  display: grid;
+  justify-items: center;
+  grid-template-columns: 300px 300px;
+}
+
+#leaderboard {
+  background-color: black;
+  display: grid;
+  grid-template-rows: auto;
+  row-gap: 5px;
+  justify-items: center;
+}
+
+#leaderboardBody {
+  display: grid;
+  grid-template-rows: auto;
+  justify-items: center;
+  row-gap: 5px;
+}
+
+h1 {
+  color: rgb(255, 192, 0);
+  font-family: "aphontregular";
+  font-size: 80px;
+  width: 600px;
+  text-align: center;
+}
+
+h3 {
+  color: rgb(255, 192, 0);
+  font-family: "aphontregular";
+  font-size: 36px;
+  margin: 0;
+}
+#titleRow h3 {
+  color: turquoise;
+  font-size: 46px;
+}
+
+@font-face {
+  font-family: "aphontregular";
+  src: url("aphont-regular_q15c-webfont.woff2") format("woff2"),
+    url("aphont-regular_q15c-webfont.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
 }
