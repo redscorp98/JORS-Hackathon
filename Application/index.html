@@ -67,8 +67,8 @@
         var params = { width: 1000, height: 1000 };
         var two = new Two(params).appendTo(elem);
         var styles = {
-          family: "aphontregular, proxima-nova, sans-serif",
-          size: 40,
+          family: "proxima-nova, sans-serif",
+          size: 80,
           leading: 50,
           weight: 900
         };
@@ -78,8 +78,14 @@
           );
         };
 
-        currentTime = timer = two.makeText("Timer", 100, 50, styles);
+        currentTime = timer = two.makeText(
+          "Timer",
+          params.width / 2,
+          50,
+          styles
+        );
         timer.fill = "yellow";
+        timer.alignment = "center";
         var direction = null;
         // two has convenience methods to create shapes.
 
@@ -87,13 +93,13 @@
         big.fill = "rgb(255,192,0)";
         big.opacity = 1;
         big.noStroke();
-        center = two.makeRectangle(500, 500, 400, 400);
+        center = two.makeRectangle(500, 500, 550, 410);
         center.fill = "black";
         center.opacity = 1;
         center.noStroke();
         // The object returned has many stylable properties:
 
-        rect = two.makeRectangle(213, 700, 50, 50);
+        rect = two.makeRectangle(200, 800, 50, 50);
         rect.fill = "rgb(27, 134, 153)";
         rect.opacity = 1;
         rect.noStroke();
