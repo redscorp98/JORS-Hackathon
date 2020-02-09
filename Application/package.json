@@ -14,6 +14,10 @@
   },
   "dependencies": {
     "jquery": "^3.4.1",
-    "serialport": "^8.0.7"
+    "paper": "^0.12.4",
+    "popmotion": "^8.7.1",
+    "serialport": "^8.0.7",
+    "two.js": "^0.7.0-stable.1",
+    "twojs-ts": "^0.7.0-13"
   }
 }

@@ -17,33 +17,126 @@
       content="script-src 'self' 'unsafe-inline';"
     />
     <script>
-      const serialport = require("serialport");
-      var port;
-      var queue = [];
-      serialport.list().then(function(data) {
-        console.log(data[0].path);
-        port = new serialport(data[0].path, {
-          baudRate: 9600
+      $(document).ready(function() {
+        const serialport = require("serialport");
+        var port;
+        var queue = [];
+        serialport.list().then(function(data) {
+          console.log(data[0].path);
+          port = new serialport(data[0].path, {
+            baudRate: 9600
+          });
         });
+        writeSerial = async function() {
+          port.write("A", function(err) {
+            if (err) {
+              return console.log("Error on write: ", err.message);
+            }
+            console.log("message written");
+          });
+        };
+        // calling this function leads to serial reads being pushed into variable queue continuously
+        readSerial = function() {
+          port.on("readable", function() {
+            queue.push(port.read());
+          });
+        };
       });
-      writeSerial = async function() {
-        port.write("A", function(err) {
-          if (err) {
-            return console.log("Error on write: ", err.message);
+    </script>
+    <script>
+      var rect;
+      var center;
+      var big;
+      var circle;
+      var speed = 0.8;
+      var start = 0;
+      var angle = 0.0;
+      var rectTop, rectBottom, rectRight, rectLeft;
+      $(document).ready(function() {
+        const Two = require("twojs-ts");
+        var elem = document.getElementById("draw-shapes");
+        var params = { width: 1000, height: 1000 };
+        var two = new Two(params).appendTo(elem);
+        var direction = null;
+        // two has convenience methods to create shapes.
+
+        big = two.makeRectangle(500, 500, 800, 800);
+        big.fill = "red";
+        big.opacity = 0.3;
+        big.noStroke();
+        center = two.makeRectangle(500, 500, 400, 400);
+        center.fill = "black";
+        center.opacity = 1;
+        center.noStroke();
+        // The object returned has many stylable properties:
+
+        rect = two.makeRectangle(213, 700, 50, 50);
+        rect.fill = "rgb(0, 200, 255)";
+        rect.opacity = 0.75;
+        rect.noStroke();
+        $(document).bind("keypress", function(e) {
+          var code = e.which;
+          console.log(code);
+          switch (code) {
+            case 119:
+            case 32:
+              start = 1 - start;
+              break;
+            case 97:
+              /*a*/ direction = "left";
+              break;
+            case 100:
+              /*d*/ direction = "right";
+              break;
           }
-          console.log("message written");
         });
-      };
-      // calling this function leads to serial reads being pushed into variable queue continuously
-      readSerial = function() {
-        port.on("readable", function() {
-          queue.push(port.read());
-        });
-      };
+
+        two
+          .bind("update", function(frameCount) {
+            if (frameCount % 2 == 0) {
+              if (direction == "left") {
+                angle = Math.PI * (10.0 / 180.0);
+                rect.rotation -= angle;
+                direction = null;
+              } else if (direction == "right") {
+                angle = Math.PI * (10.0 / 180.0);
+                rect.rotation += angle;
+                direction = null;
+              } else {
+              }
+            }
+
+            // controls regular movements
+            if (start == 1) {
+              rect.translation.x += speed * Math.sin(rect.rotation);
+              rect.translation.y -= Math.cos(rect.rotation) * speed;
+            }
+            rectTop = rect.translation.y - rect.height / 2;
+            rectBottom = rect.translation.y + rect.height / 2;
+            rectRight = rect.translation.x + rect.width / 2;
+            rectLeft = rect.translation.x - rect.width / 2;
+            // logic to make sure the car is in bounds
+            if (
+              (rectBottom > center.getBoundingClientRect().top &&
+                rectRight > center.getBoundingClientRect().left &&
+                rectLeft < center.getBoundingClientRect().right &&
+                rectTop < center.getBoundingClientRect().bottom) ||
+              rectTop < big.getBoundingClientRect().top ||
+              rectLeft < big.getBoundingClientRect().left ||
+              rectRight > big.getBoundingClientRect().right ||
+              rectBottom > big.getBoundingClientRect().bottom
+            ) {
+              console.log("Collision");
+              start = 0;
+            }
+          })
+          .play();
+
+        two.update();
+      });
     </script>
   </head>
   <body>
-    <h1>Hello World!</h1>
-    <button>Button</button>
+    <div id="draw-shapes"></div>
   </body>
 </html>
