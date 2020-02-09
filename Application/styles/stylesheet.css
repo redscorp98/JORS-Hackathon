@@ -9,6 +9,19 @@ button {
 }
 #draw-shapes {
   border: solid black 1px;
+  background-color: black;
   height: 1400px;
   width: 1400px;
+}
+body {
+  height: auto;
+  width: auto;
+}
+
+@font-face {
+  font-family: "aphontregular";
+  src: url("/styles/aphont-regular_q15c-webfont.woff2") format("woff2"),
+    url("/styles/aphont-regular_q15c-webfont.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
 }

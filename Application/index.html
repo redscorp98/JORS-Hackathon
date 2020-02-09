@@ -17,30 +17,32 @@
       content="script-src 'self' 'unsafe-inline';"
     />
     <script>
+      var queue = [];
       $(document).ready(function() {
         const serialport = require("serialport");
         var port;
-        var queue = [];
-        serialport.list().then(function(data) {
-          console.log(data[0].path);
-          port = new serialport(data[0].path, {
-            baudRate: 9600
-          });
-        });
-        writeSerial = async function() {
-          port.write("A", function(err) {
-            if (err) {
-              return console.log("Error on write: ", err.message);
-            }
-            console.log("message written");
-          });
-        };
-        // calling this function leads to serial reads being pushed into variable queue continuously
         readSerial = function() {
           port.on("readable", function() {
             queue.push(port.read());
           });
         };
+        writeSerial = async function() {
+          port.write("A", function(err) {
+            if (err) {
+              return console.log("Error on write: ", err.message);
+            }
+            // console.log("message written");
+          });
+        };
+        serialport.list().then(function(data) {
+          console.log(data[0].path);
+          port = new serialport(data[0].path, {
+            baudRate: 115200
+          });
+          readSerial();
+        });
+
+        // calling this function leads to serial reads being pushed into variable queue continuously
       });
     </script>
     <script>
@@ -51,18 +53,39 @@
       var speed = 0.8;
       var start = 0;
       var angle = 0.0;
+      var timer;
+      var startTime = new Date().getTime();
+      var currentTime;
+      var joystick;
+      var ultraSound;
+      var joystickMod;
+      var ultraSoundMod;
       var rectTop, rectBottom, rectRight, rectLeft;
       $(document).ready(function() {
         const Two = require("twojs-ts");
         var elem = document.getElementById("draw-shapes");
         var params = { width: 1000, height: 1000 };
         var two = new Two(params).appendTo(elem);
+        var styles = {
+          family: "aphontregular, proxima-nova, sans-serif",
+          size: 40,
+          leading: 50,
+          weight: 900
+        };
+        getElapsedTime = function() {
+          return String(
+            ((new Date().getTime() - startTime) % (1000 * 60)) / 1000
+          );
+        };
+
+        currentTime = timer = two.makeText("Timer", 100, 50, styles);
+        timer.fill = "yellow";
         var direction = null;
         // two has convenience methods to create shapes.
 
         big = two.makeRectangle(500, 500, 800, 800);
-        big.fill = "red";
-        big.opacity = 0.3;
+        big.fill = "rgb(255,192,0)";
+        big.opacity = 1;
         big.noStroke();
         center = two.makeRectangle(500, 500, 400, 400);
         center.fill = "black";
@@ -71,16 +94,17 @@
         // The object returned has many stylable properties:
 
         rect = two.makeRectangle(213, 700, 50, 50);
-        rect.fill = "rgb(0, 200, 255)";
-        rect.opacity = 0.75;
+        rect.fill = "rgb(27, 134, 153)";
+        rect.opacity = 1;
         rect.noStroke();
         $(document).bind("keypress", function(e) {
           var code = e.which;
           console.log(code);
           switch (code) {
             case 119:
-            case 32:
+            case 112 /*p*/:
               start = 1 - start;
+              startTime = new Date().getTime();
               break;
             case 97:
               /*a*/ direction = "left";
@@ -93,16 +117,33 @@
 
         two
           .bind("update", function(frameCount) {
+            if (frameCount % 10 == 0) {
+              writeSerial();
+            }
+            if (queue.length > 0) {
+              var buffer = queue.shift();
+              // console.log(buffer);
+              // range 0- 1023
+              joystick = (buffer[5] << 8) | buffer[4];
+              joystickMod = (512.0 - joystick) / 1023.0;
+
+              // console.log("Queue: " + String(joystick));
+              // range 5 - 15
+              ultraSound =
+                (buffer[3] << 24) |
+                (buffer[2] << 16) |
+                (buffer[1] << 8) |
+                buffer[0];
+              ultraSoundClamped = Math.min(25, Math.max(15, ultraSound + 10));
+              speed = ultraSoundClamped / 5;
+            }
+
             if (frameCount % 2 == 0) {
-              if (direction == "left") {
-                angle = Math.PI * (10.0 / 180.0);
-                rect.rotation -= angle;
-                direction = null;
-              } else if (direction == "right") {
-                angle = Math.PI * (10.0 / 180.0);
+              // console.log("In frame: " + String(joystick));
+              angle = Math.PI * (10.0 / 180.0) * joystickMod;
+              if (joystick < 440 || joystick >= 584) {
                 rect.rotation += angle;
                 direction = null;
-              } else {
               }
             }
 
@@ -110,6 +151,9 @@
             if (start == 1) {
               rect.translation.x += speed * Math.sin(rect.rotation);
               rect.translation.y -= Math.cos(rect.rotation) * speed;
+              if (frameCount % 5 == 0) {
+                timer.value = String(parseFloat(getElapsedTime()).toFixed(1));
+              }
             }
             rectTop = rect.translation.y - rect.height / 2;
             rectBottom = rect.translation.y + rect.height / 2;
